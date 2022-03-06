@@ -1,0 +1,9 @@
+root@qemux86:~# echo 7 > /proc/sys/kernel/printk
+
+root@qemux86:~# insmod skels/kernel_modules/1-2-test-mod/hello_mod.ko
+
+root@qemux86:~# rmmod hello_mod
+
+root@qemux86:~# dmesg | tail -2
+Hello!
+Goodbye!
