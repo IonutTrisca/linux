@@ -1,0 +1,2 @@
+root@qemux86:~# insmod skels/kernel_modules/6-cmd-mod/cmd_mod.ko str="tired"
+Early bird gets tired
