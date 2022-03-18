@@ -139,6 +139,12 @@ static int so2_cdev_init(void)
 	int i;
 
 	/* TODO 1: register char device region for MY_MAJOR and NUM_MINORS starting at MY_MINOR */
+	err = register_chrdev_region(MKDEV(MY_MAJOR, MY_MINOR), NUM_MINORS,
+								"so2_cdev");
+	if (err != 0) {
+		pr_info("failed to register so2_cdev: %d\n", err);
+		return err;
+	}
 
 	for (i = 0; i < NUM_MINORS; i++) {
 #ifdef EXTRA
@@ -151,6 +157,7 @@ static int so2_cdev_init(void)
 		/* TODO 2: init and add cdev to kernel core */
 	}
 
+	pr_info("registered so2_cdev\n");
 	return 0;
 }
 
@@ -163,6 +170,8 @@ static void so2_cdev_exit(void)
 	}
 
 	/* TODO 1: unregister char device region, for MY_MAJOR and NUM_MINORS starting at MY_MINOR */
+	unregister_chrdev_region(MKDEV(MY_MAJOR, MY_MINOR), NUM_MINORS);
+	pr_info("unregistered so2_cdev\n");
 }
 
 module_init(so2_cdev_init);
