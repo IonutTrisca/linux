@@ -40,6 +40,7 @@ struct so2_device_data {
 	/* TODO 4: add buffer with BUFSIZ elements */
 	/* TODO 7: extra members for home */
 	/* TODO 3: add atomic_t access variable to keep track if file is opened */
+	atomic_t lock;
 };
 
 struct so2_device_data devs[NUM_MINORS];
@@ -52,10 +53,13 @@ static int so2_cdev_open(struct inode *inode, struct file *file)
 	pr_info("so2_cdev device file opened\n");
 
 	/* TODO 3: inode->i_cdev contains our cdev struct, use container_of to obtain a pointer to so2_device_data */
+	data = container_of(inode->i_cdev, struct so2_device_data, cdev);
 
 	file->private_data = data;
 
 	/* TODO 3: return immediately if access is != 0, use atomic_cmpxchg */
+	if (atomic_cmpxchg(&data->lock, 0, 1))
+		return -EBUSY;
 
 	set_current_state(TASK_INTERRUPTIBLE);
 	schedule_timeout(10 * HZ);
@@ -74,6 +78,7 @@ so2_cdev_release(struct inode *inode, struct file *file)
 		(struct so2_device_data *) file->private_data;
 
 	/* TODO 3: reset access variable to 0, use atomic_set */
+	atomic_set(&data->lock, 0);
 #endif
 	return 0;
 }
@@ -160,6 +165,8 @@ static int so2_cdev_init(void)
 #endif
 		/* TODO 7: extra tasks for home */
 		/* TODO 3: set access variable to 0, use atomic_set */
+		atomic_set(&devs[i].lock, 0);
+		
 		/* TODO 2: init and add cdev to kernel core */
         cdev_init(&devs[i].cdev, &so2_fops);
 		cdev_add(&devs[i].cdev, MKDEV(MY_MAJOR, i), 1);
