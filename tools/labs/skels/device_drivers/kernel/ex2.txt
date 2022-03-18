@@ -1,0 +1,30 @@
+root@qemux86:~# cat /proc/devices
+Character devices:
+  1 mem
+  2 pty
+  3 ttyp
+  4 /dev/vc/0
+  4 tty
+  5 /dev/tty
+  5 /dev/console
+  5 /dev/ptmx
+  7 vcs
+ 10 misc
+ 13 input
+ 42 so2_cdev
+128 ptm
+136 pts
+229 hvc
+253 virtio-portsdev
+254 bsg
+
+
+Am ales major 1
+
+root@qemux86:~# insmod skels/device_drivers/kernel/so2_cdev.ko
+so2_cdev: loading out-of-tree module taints kernel.
+failed to register so2_cdev: -16
+insmod: can't insert 'skels/device_drivers/kernel/so2_cdev.ko': Device or resource busy
+
+Cum spune si rezultatul comenzii dispozitivul este ocupat
+EBUSY		16	/* Device or resource busy */
