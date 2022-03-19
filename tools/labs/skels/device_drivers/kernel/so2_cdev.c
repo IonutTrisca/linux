@@ -128,7 +128,7 @@ so2_cdev_write(struct file *file,
 	/* TODO 5: copy user_buffer to data->buffer, use copy_from_user */
 	if (copy_from_user(data->buffer, user_buffer, size))
 		return -EFAULT;
-		
+
 	/* TODO 7: extra tasks for home */
 
 	return size;
@@ -144,6 +144,9 @@ so2_cdev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 	switch (cmd) {
 	/* TODO 6: if cmd = MY_IOCTL_PRINT, display IOCTL_MESSAGE */
+	case MY_IOCTL_PRINT:
+		pr_info("%s\n", IOCTL_MESSAGE);
+		break;
 	/* TODO 7: extra tasks, for home */
 	default:
 		ret = -EINVAL;
@@ -162,6 +165,7 @@ static const struct file_operations so2_fops = {
 /* TODO 5: add write function */
 	.write = so2_cdev_write,
 /* TODO 6: add ioctl function */
+	.unlocked_ioctl = so2_cdev_ioctl,
 };
 
 static int so2_cdev_init(void)

@@ -1,0 +1,6 @@
+root@qemux86:~# ./so2_cdev_test p
+
+root@qemux86:~# dmesg | tail -3
+[ 1623.695089] so2_cdev device file opened
+[ 1623.695617] Hello ioctl
+[ 1623.695840] so2_cdev device file closed
