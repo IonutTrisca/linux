@@ -152,6 +152,15 @@ static int kbd_init(void)
 	}
 
 	/* TODO 1: request the keyboard I/O ports */
+	if (!request_region(I8042_DATA_REG + 1, 1, MODULE_NAME)) {
+		err = -EBUSY;
+		goto out_unregister;
+	}
+
+	if (!request_region(I8042_STATUS_REG + 1, 1, MODULE_NAME)) {
+		err = -EBUSY;
+		goto out_unregister;
+	}
 
 	/* TODO 3: initialize spinlock */
 
@@ -168,6 +177,7 @@ static int kbd_init(void)
 out_unregister:
 	unregister_chrdev_region(MKDEV(KBD_MAJOR, KBD_MINOR),
 				 KBD_NR_MINORS);
+	
 out:
 	return err;
 }
@@ -179,7 +189,8 @@ static void kbd_exit(void)
 	/* TODO 2: Free IRQ. */
 
 	/* TODO 1: release keyboard I/O ports */
-
+	release_region(I8042_DATA_REG + 1, 1);
+	release_region(I8042_STATUS_REG + 1, 1);
 
 	unregister_chrdev_region(MKDEV(KBD_MAJOR, KBD_MINOR),
 				 KBD_NR_MINORS);
