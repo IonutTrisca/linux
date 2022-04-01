@@ -40,6 +40,7 @@ static struct my_device_data {
 	/* TODO 1: add timer */
 	struct timer_list timer;
 	/* TODO 2: add flag */
+	int flag;
 	/* TODO 3: add work */
 	/* TODO 4: add list for monitored processes */
 	/* TODO 4: add spinlock to protect list */
@@ -81,15 +82,29 @@ static struct mon_proc *get_proc(pid_t pid)
 
 static void timer_handler(struct timer_list *tl)
 {
+	struct my_device_data *my_data = from_timer(my_data, tl, timer);
+
 	/* TODO 1: implement timer handler */
 	pr_info("[timer_handler] name: %s | pid: %d\n", current->comm, current->pid);
+
 	/* TODO 2: check flags: TIMER_TYPE_SET or TIMER_TYPE_ALLOC */
+	switch(my_data->flag) {
+	case TIMER_TYPE_SET:
+		break;
+	case TIMER_TYPE_ALLOC:
+		alloc_io();
 		/* TODO 3: schedule work */
-		/* TODO 4: iterate the list and check the proccess state */
-			/* TODO 4: if task is dead print info ... */
-			/* TODO 4: ... decrement task usage counter ... */
-			/* TODO 4: ... remove it from the list ... */
-			/* TODO 4: ... free the struct mon_proc */
+		break;
+	case TIMER_TYPE_MON:
+	/* TODO 4: iterate the list and check the proccess state */
+		/* TODO 4: if task is dead print info ... */
+		/* TODO 4: ... decrement task usage counter ... */
+		/* TODO 4: ... remove it from the list ... */
+		/* TODO 4: ... free the struct mon_proc */
+		break;
+	default:
+		break;
+	}
 }
 
 static int deferred_open(struct inode *inode, struct file *file)
@@ -116,6 +131,7 @@ static long deferred_ioctl(struct file *file, unsigned int cmd, unsigned long ar
 	switch (cmd) {
 		case MY_IOCTL_TIMER_SET:
 			/* TODO 2: set flag */
+			my_data->flag = TIMER_TYPE_SET;
 			/* TODO 1: schedule timer */
 			mod_timer(&my_data->timer, jiffies + arg * HZ);
 			break;
@@ -125,6 +141,8 @@ static long deferred_ioctl(struct file *file, unsigned int cmd, unsigned long ar
 			break;
 		case MY_IOCTL_TIMER_ALLOC:
 			/* TODO 2: set flag and schedule timer */
+			my_data->flag = TIMER_TYPE_ALLOC;
+			mod_timer(&my_data->timer, jiffies + arg * HZ);
 			break;
 		case MY_IOCTL_TIMER_MON:
 		{
@@ -159,6 +177,7 @@ static int deferred_init(void)
 	}
 
 	/* TODO 2: Initialize flag. */
+	dev.flag = TIMER_TYPE_NONE;
 	/* TODO 3: Initialize work. */
 
 	/* TODO 4: Initialize lock and list. */
