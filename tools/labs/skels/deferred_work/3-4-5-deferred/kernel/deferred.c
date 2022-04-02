@@ -44,7 +44,9 @@ static struct my_device_data {
 	/* TODO 3: add work */
 	struct work_struct work;
 	/* TODO 4: add list for monitored processes */
+	struct list_head list;
 	/* TODO 4: add spinlock to protect list */
+	spinlock_t lock;
 } dev;
 
 static void alloc_io(void)
@@ -106,12 +108,29 @@ static void timer_handler(struct timer_list *tl)
 #endif
 		break;
 	case TIMER_TYPE_MON:
-	/* TODO 4: iterate the list and check the proccess state */
-		/* TODO 4: if task is dead print info ... */
-		/* TODO 4: ... decrement task usage counter ... */
-		/* TODO 4: ... remove it from the list ... */
-		/* TODO 4: ... free the struct mon_proc */
+	{
+		struct mon_proc *p, *n;
+
+		/* TODO 4: iterate the list and check the proccess state */
+		spin_lock(&my_data->lock);
+		list_for_each_entry_safe(p, n, &my_data->list, list) {
+			if (p->task->state == TASK_DEAD) {
+				/* TODO 4: if task is dead print info ... */
+				pr_info("[timer_handler] task: name: %s | pid: %d is dead\n", p->task->comm,
+					p->task->pid);
+				/* TODO 4: ... decrement task usage counter ... */
+				put_task_struct(p->task);
+				/* TODO 4: ... remove it from the list ... */
+				list_del(&p->list);
+				/* TODO 4: ... free the struct mon_proc */
+				kfree(p);
+			}
+		}
+		spin_unlock(&my_data->lock);
+
+		mod_timer(&my_data->timer, jiffies + HZ);
 		break;
+	}
 	default:
 		break;
 	}
@@ -157,9 +176,18 @@ static long deferred_ioctl(struct file *file, unsigned int cmd, unsigned long ar
 		case MY_IOCTL_TIMER_MON:
 		{
 			/* TODO 4: use get_proc() and add task to list */
+			struct mon_proc *mp = get_proc(arg);
+			if (IS_ERR(mp))
+				return PTR_ERR(mp);
+
 			/* TODO 4: protect access to list */
+			spin_lock_bh(&my_data->lock);
+			list_add(&mp->list, &my_data->list);
+			spin_unlock_bh(&my_data->lock);
 
 			/* TODO 4: set flag and schedule timer */
+			my_data->flag = TIMER_TYPE_MON;
+			mod_timer(&my_data->timer, jiffies + HZ);
 			break;
 		}
 		default:
@@ -191,6 +219,8 @@ static int deferred_init(void)
 	/* TODO 3: Initialize work. */
 	INIT_WORK(&dev.work, work_handler);
 	/* TODO 4: Initialize lock and list. */
+	spin_lock_init(&dev.lock);
+	INIT_LIST_HEAD(&dev.list);
 
 	cdev_init(&dev.cdev, &my_fops);
 	cdev_add(&dev.cdev, MKDEV(MY_MAJOR, MY_MINOR), 1);
@@ -214,10 +244,16 @@ static void deferred_exit(void)
 	del_timer_sync(&dev.timer);
 	/* TODO 3: Cleanup: make sure the work handler is not scheduled. */
 	cancel_work_sync(&dev.work);
+	
 	/* TODO 4: Cleanup the monitered process list */
+	list_for_each_entry_safe(p, n, &dev.list, list) {
 		/* TODO 4: ... decrement task usage counter ... */
+		put_task_struct(p->task);
 		/* TODO 4: ... remove it from the list ... */
+		list_del(&p->list);
 		/* TODO 4: ... free the struct mon_proc */
+		kfree(p);
+	}
 }
 
 module_init(deferred_init);
