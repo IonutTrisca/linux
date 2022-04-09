@@ -144,8 +144,9 @@ static int __init my_init(void)
 	/* TODO 1: allocate NPAGES using vmalloc */
 	vmalloc_area = vmalloc(NPAGES * PAGE_SIZE);
 	if (!vmalloc_area) {
-		pr_info("kmalloc failed\n");
-		return -ENOMEM;
+		pr_info("vmalloc failed\n");
+		ret = -ENOMEM;
+		goto out_unreg;
 	}
 
 	/* TODO 1: mark pages as reserved */
