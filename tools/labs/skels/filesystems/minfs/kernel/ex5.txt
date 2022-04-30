@@ -1,0 +1,23 @@
+root@qemux86:~/filesystems/minfs/user# ./test-minfs.sh
++ insmod ../kernel/minfs.ko
++ mkdir -p /mnt/minfs
++ ./mkfs.minfs /dev/vdb
++ mount -t minfs /dev/vdb /mnt/minfs
++ cat /proc/filesystems
++ grep minfs
+        minfs
++ cat /proc/mounts
++ grep minfs
+/dev/vdb /mnt/minfs minfs rw,relatime 0 0
++ stat -f /mnt/minfs
+  File: "/mnt/minfs"
+    ID: 0        Namelen: 255     Type: UNKNOWN (0xdeadf00d)
+Block size: 4096       Fundamental block size: 4096
+Blocks: Total: 0          Free: 0          Available: 0
+Inodes: Total: 0          Free: 0
++ cd /mnt/minfs
++ ls -la
+total 0
++ cd ..
++ umount /mnt/minfs
++ rmmod minfs
