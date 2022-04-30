@@ -92,21 +92,34 @@ static struct inode *minfs_iget(struct super_block *s, unsigned long ino)
 	 * the device, i.e. the block with the index 1. This is the index
 	 * to be passed to sb_bread().
 	 */
+	bh = sb_bread(s, MINFS_INODE_BLOCK);
+	if (bh == NULL)
+		goto out_bad_sb;
 
 	/* TODO 4: Get inode with index ino from the block. */
+	mi = ((struct minfs_inode *) bh->b_data) + ino;
 
 	/* TODO 4: fill VFS inode */
+	i_uid_write(inode, mi->uid);
+	i_gid_write(inode, mi->gid);
+	inode->i_mode = mi->mode;
+	inode->i_size = mi->size;
+	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
+	inode->i_blocks = 0;
 
 	/* TODO 7: Fill address space operations (inode->i_mapping->a_ops) */
 
 	if (S_ISDIR(inode->i_mode)) {
 		/* TODO 4: Fill dir inode operations. */
+		inode->i_op = &simple_dir_inode_operations;
+		inode->i_fop = &simple_dir_operations;
 
 		/* TODO 5: Use minfs_dir_inode_operations for i_op
 		 * and minfs_dir_operations for i_fop. */
 
 		/* TODO 4: Directory inodes start off with i_nlink == 2.
 		 * (use inc_link) */
+		inc_nlink(inode);
 	}
 
 	/* TODO 7: Fill inode and file operations for regular files
@@ -117,11 +130,11 @@ static struct inode *minfs_iget(struct super_block *s, unsigned long ino)
 	mii = container_of(inode, struct minfs_inode_info, vfs_inode);
 
 	/* TODO 4: uncomment after the minfs_inode is initialized */
-	//mii->data_block = mi->data_block;
+	mii->data_block = mi->data_block;
 
 	/* Free resources. */
 	/* TODO 4: uncomment after the buffer_head is initialized */
-	//brelse(bh);
+	brelse(bh);
 	unlock_new_inode(inode);
 
 	return inode;
@@ -416,53 +429,10 @@ static const struct super_operations minfs_ops = {
 	.statfs		= simple_statfs,
 	.put_super	= minfs_put_super,
 	/* TODO 4: add alloc and destroy inode functions */
+	.alloc_inode	= minfs_alloc_inode,
+	.destroy_inode	= minfs_destroy_inode,
 	/* TODO 7:	= set write_inode function. */
 };
-
-struct inode *myfs_get_inode(struct super_block *sb, const struct inode *dir,
-		int mode)
-{
-	struct inode *inode = new_inode(sb);
-
-	if (!inode)
-		return NULL;
-
-	/* TODO 3: fill inode structure
-	 *     - mode
-	 *     - uid
-	 *     - gid
-	 *     - atime,ctime,mtime
-	 *     - ino
-	 */
-	inode_init_owner(inode, NULL, mode);
-	inode->i_atime = inode->i_mtime = inode->i_ctime = current_time(inode);
-	inode->i_ino = 42;
-	
-	/* TODO 5: Init i_ino using get_next_ino */
-
-	/* TODO 6: Initialize address space operations. */
-
-	if (S_ISDIR(mode)) {
-		/* TODO 3: set inode operations for dir inodes. */
-		inode->i_op = &simple_dir_inode_operations;
-		inode->i_fop = &simple_dir_operations;
-
-		/* TODO 5: use myfs_dir_inode_operations for inode
-		 * operations (i_op).
-		 */
-
-		/* TODO 3: directory inodes start off with i_nlink == 2 (for "." entry).
-		 * Directory link count should be incremented (use inc_nlink).
-		 */
-		inc_nlink(inode);
-	}
-
-	/* TODO 6: Set file inode and file operations for regular files
-	 * (use the S_ISREG macro).
-	 */
-
-	return inode;
-}
 
 static int minfs_fill_super(struct super_block *s, void *data, int silent)
 {
@@ -509,9 +479,7 @@ static int minfs_fill_super(struct super_block *s, void *data, int silent)
 
 	/* allocate root inode and root dentry */
 	/* TODO 2: use myfs_get_inode instead of minfs_iget */
-	root_inode = myfs_get_inode(s, NULL, 
-			S_IFDIR | S_IRWXU | S_IRGRP |
-			S_IXGRP | S_IROTH | S_IXOTH);
+	root_inode = minfs_iget(s, MINFS_ROOT_INODE);
 	if (!root_inode)
 		goto out_bad_inode;
 
