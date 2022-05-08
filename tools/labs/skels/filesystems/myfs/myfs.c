@@ -34,6 +34,14 @@ static const struct super_operations myfs_ops = {
 
 static const struct inode_operations myfs_dir_inode_operations = {
 	/* TODO 5: Fill dir inode operations structure. */
+	.create         = myfs_create,
+	.lookup         = simple_lookup,
+	.link           = simple_link,
+	.mkdir          = myfs_mkdir,
+	.rmdir          = simple_rmdir,
+	.unlink         = simple_unlink,
+	.mknod          = myfs_mknod,
+	.rename         = simple_rename,
 };
 
 static const struct file_operations myfs_file_operations = {
@@ -65,9 +73,10 @@ struct inode *myfs_get_inode(struct super_block *sb, const struct inode *dir,
 	 */
 	inode_init_owner(inode, NULL, mode);
 	inode->i_atime = inode->i_mtime = inode->i_ctime = current_time(inode);
-	inode->i_ino = 42;
+	//inode->i_ino = 42;
 	
 	/* TODO 5: Init i_ino using get_next_ino */
+	inode->i_ino = get_next_ino();
 
 	/* TODO 6: Initialize address space operations. */
 
@@ -79,6 +88,7 @@ struct inode *myfs_get_inode(struct super_block *sb, const struct inode *dir,
 		/* TODO 5: use myfs_dir_inode_operations for inode
 		 * operations (i_op).
 		 */
+		inode->i_op = &myfs_dir_inode_operations;
 
 		/* TODO 3: directory inodes start off with i_nlink == 2 (for "." entry).
 		 * Directory link count should be incremented (use inc_nlink).
@@ -94,6 +104,35 @@ struct inode *myfs_get_inode(struct super_block *sb, const struct inode *dir,
 }
 
 /* TODO 5: Implement myfs_mknod, myfs_create, myfs_mkdir. */
+static int myfs_mknod(struct inode *dir, struct dentry *dentry, umode_t mode, dev_t dev)
+{
+	struct inode *inode = myfs_get_inode(dir->i_sb, dir, mode);
+	int error = -ENOSPC;
+
+	if (inode) {
+		d_instantiate(dentry, inode);
+		dget(dentry);
+		error = 0;
+		dir->i_mtime = dir->i_ctime = current_time(dir);
+	}
+
+	return error;
+}
+
+static int myfs_create(struct inode *dir, struct dentry *dentry, umode_t mode, bool excl)
+{
+	return myfs_mknod(dir, dentry, mode | S_IFREG, 0);
+}
+
+static int myfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
+{
+	int retval = myfs_mknod(dir, dentry, mode | S_IFDIR, 0);
+	
+	if (!retval)
+		inc_nlink(dir);
+
+	return retval;
+}
 
 static int myfs_fill_super(struct super_block *sb, void *data, int silent)
 {
