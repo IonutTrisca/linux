@@ -82,15 +82,33 @@ int __init my_tcp_sock_init(void)
 	}
 
 	/* TODO 2: create new socket for the accepted connection */
+	err = sock_create_lite(PF_INET, SOCK_STREAM, IPPROTO_TCP, &new_sock);
+	if (err < 0) {
+		pr_err("unable to create new socket\n");
+		goto out_release;
+	}
+	new_sock->ops = sock->ops;
 
 	/* TODO 2: accept a connection */
+	err = new_sock->ops->accept(sock, new_sock, 0, true);
+	if (err < 0) {
+		pr_err("unable to accept socket\n");
+		goto out_release_new_sock;
+	}
 
 	/* TODO 2: get the address of the peer and print it */
-
+	err = sock->ops->getname(new_sock, (struct sockaddr *) &raddr, 1);
+	if (err < 0) {
+		printk(LOG_LEVEL "can't find peer name\n");
+		goto out_release_new_sock;
+	}
+	print_sock_address(raddr);
+	
 	return 0;
 
 out_release_new_sock:
 	/* TODO 2: cleanup socket for accepted connection */
+	sock_release(new_sock);
 out_release:
 	/* TODO 1: cleanup listening socket */
 	sock_release(sock);
@@ -101,7 +119,7 @@ out:
 void __exit my_tcp_sock_exit(void)
 {
 	/* TODO 2: cleanup socket for accepted connection */
-
+	sock_release(new_sock);
 	/* TODO 1: cleanup listening socket */
 	sock_release(sock);
 }
