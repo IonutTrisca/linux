@@ -1,10 +1,10 @@
 /*
- * SO2 - Networking Lab (#10)
- *
- * Exercise #1, #2: simple netfilter module
- *
- * Code skeleton.
- */
+* SO2 - Networking Lab (#10)
+*
+* Exercise #1, #2: simple netfilter module
+*
+* Code skeleton.
+*/
 
 #include <linux/kernel.h>
 #include <linux/sched.h>
@@ -37,14 +37,17 @@ static unsigned int ioctl_set_addr;
 
 
 /* Test ioctl_set_addr if it has been set.
- */
+*/
 static int test_daddr(unsigned int dst_addr)
 {
 	int ret = 0;
 
 	/* TODO 2: return non-zero if address has been set
-	 * *and* matches dst_addr
-	 */
+	* *and* matches dst_addr
+	*/
+
+	if (atomic_read(&ioctl_set) == 1 && ioctl_set_addr == dst_addr)
+		ret = 1;
 
 	return ret;
 }
@@ -57,7 +60,7 @@ static unsigned int my_nf_hookfn(void *priv, struct sk_buff *skb, const struct n
 
 	iph = ip_hdr(skb);
 	
-	if (iph->protocol != IPPROTO_TCP)
+	if (iph->protocol != IPPROTO_TCP || !test_daddr(iph->daddr))
 		return NF_ACCEPT;
 
 	tcph = tcp_hdr(skb);
@@ -83,6 +86,9 @@ static long my_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	switch (cmd) {
 	case MY_IOCTL_FILTER_ADDRESS:
 		/* TODO 2: set filter address from arg */
+		if (copy_from_user(&ioctl_set_addr, (void *)arg, sizeof(ioctl_set_addr)))
+			return -EFAULT;
+		atomic_set(&ioctl_set, 1);
 		break;
 
 	default:
@@ -102,7 +108,7 @@ static const struct file_operations my_fops = {
 /* TODO 1: define netfilter hook operations structure */
 struct nf_hook_ops my_hook_ops = {
 	.hook 		= my_nf_hookfn,
-    .hooknum    = NF_INET_LOCAL_OUT,
+	.hooknum    = NF_INET_LOCAL_OUT,
 	.pf         = PF_INET,
 	.priority   = NF_IP_PRI_FIRST,
 };
