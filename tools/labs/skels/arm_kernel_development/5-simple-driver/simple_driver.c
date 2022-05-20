@@ -16,7 +16,8 @@ MODULE_LICENSE("GPL");
 
 static const struct of_device_id simple_device_ids[] = {
 	/* TODO 2: Add compatible strings */
-	{ /* sentinel */}
+	{ .compatible = "so2,simple-device-v1" },
+	{ .compatible = "so2,simple-device-v2" },
 };
 
 static int simple_probe(struct platform_device *pdev)
