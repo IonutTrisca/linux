@@ -1,0 +1,14 @@
+root@qemux86:~# insmod skels/kernel_modules/1-2-test-mod/hello_mod.ko
+hello_mod: loading out-of-tree module taints kernel.
+Hello!
+
+root@qemux86:~# lsmod
+    Tainted: G
+hello_mod 16384 0 - Live 0xd084e000 (O)
+
+root@qemux86:~# rmmod hello_mod
+Goodbye!
+
+root@qemux86:~# dmesg | tail -2
+Hello!
+Goodbye!

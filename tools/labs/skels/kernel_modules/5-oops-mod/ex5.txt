@@ -1,0 +1,56 @@
+EIP: my_oops_init+0xd/0x22 [oops_mod]
+
+root@qemux86:~# cat /proc/modules
+oops_mod 20480 1 - Loading 0xd084e000 (O+)
+
+ionut@ASUS-FX505DU:~/linux/tools/labs$ objdump -dS --adjust-vma=0xd084e000 skels/kernel_modules/5-oops-mod/oops_mod.ko
+
+skels/kernel_modules/5-oops-mod/oops_mod.ko:     file format elf32-i386
+
+
+Disassembly of section .text.unlikely:
+
+d084e000 <init_module>:
+MODULE_DESCRIPTION("Oops generating module");
+MODULE_AUTHOR("So2rul Esforever");
+MODULE_LICENSE("GPL");
+
+static int my_oops_init(void)
+{
+d084e000:       55                      push   %ebp
+d084e001:       89 e5                   mov    %esp,%ebp
+        char *p = 0;
+
+        pr_info("before init\n");
+d084e003:       68 00 00 00 00          push   $0x0
+d084e008:       e8 fc ff ff ff          call   d084e009 <init_module+0x9>
+        *p = 'a';
+d084e00d:       c6 05 00 00 00 00 61    movb   $0x61,0x0
+        pr_info("after init\n");
+d084e014:       68 0f 00 00 00          push   $0xf
+d084e019:       e8 fc ff ff ff          call   d084e01a <init_module+0x1a>
+
+        return 0;
+}
+d084e01e:       31 c0                   xor    %eax,%eax
+d084e020:       c9                      leave
+d084e021:       c3                      ret
+
+d084e022 <cleanup_module>:
+
+static void my_oops_exit(void)
+{
+d084e022:       55                      push   %ebp
+d084e023:       89 e5                   mov    %esp,%ebp
+        pr_info("module goes all out\n");
+d084e025:       68 1d 00 00 00          push   $0x1d
+d084e02a:       e8 fc ff ff ff          call   d084e02b <cleanup_module+0x9>
+}
+d084e02f:       58                      pop    %eax
+d084e030:       c9                      leave
+d084e031:       c3                      ret
+
+EIP era la my_oops_init+0xd deci instructiunea este *p = 'a';
+
+root@qemux86:~# rmmod oops_mod
+rmmod: can't unload 'oops_mod': Device or resource busy
