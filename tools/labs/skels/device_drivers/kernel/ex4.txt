@@ -1,0 +1,6 @@
+root@qemux86:~# cat /dev/so2_cdev & cat /dev/so2_cdev
+so2_cdev device file opened
+so2_cdev device file opened
+cat: can't open '/dev/so2_cdev': Device or resource busy
+cat: read error: Invalid argument
+so2_cdev device file closed
