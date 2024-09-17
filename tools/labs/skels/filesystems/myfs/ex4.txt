@@ -1,0 +1,24 @@
+root@qemux86:~/filesystems/myfs# ./test-myfs.sh
++ insmod myfs.ko
++ mkdir -p /mnt/myfs
++ mount -t myfs none /mnt/myfs
++ cat /proc/filesystems
++ grep myfs
+nodev   myfs
++ cat /proc/mounts
++ grep myfs
+none /mnt/myfs myfs rw,relatime 0 0
++ stat -f /mnt/myfs
+  File: "/mnt/myfs"
+    ID: 0        Namelen: 255     Type: UNKNOWN (0xbeefcafe)
+Block size: 4096       Fundamental block size: 4096
+Blocks: Total: 0          Free: 0          Available: 0
+Inodes: Total: 0          Free: 0
++ cd /mnt/myfs
++ ls -la
+total 4
+drwxr-xr-x 2 root root    0 Apr 29 06:12 .
+drwxr-xr-x 4 root root 4096 Apr 29 05:46 ..
++ cd ..
++ umount /mnt/myfs
++ rmmod myfs
